@@ -5,12 +5,12 @@
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; version 2 of the License.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -25,6 +25,11 @@
 #include <linux/i2c.h>
 #include <linux/i2c-dev.h>
 #include <i2c/smbus.h>
+
+#if PY_MAJOR_VERSION >= 3
+#define PyInt_Check(value) PyLong_Check(value)
+#define PyInt_AS_LONG(value) PyLong_AS_LONG(value)
+#endif
 
 /*
 ** These are required to build this module against Linux older than 2.6.23.
@@ -94,7 +99,7 @@ SMBus_dealloc(SMBus *self)
 	PyObject *ref = SMBus_close(self);
 	Py_XDECREF(ref);
 
-	self->ob_type->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 #define MAXPATH 16
@@ -434,7 +439,7 @@ SMBus_list_to_data(PyObject *list, union i2c_smbus_data *data)
 
 	for (ii = 0; ii < len; ii++) {
 		PyObject *val = PyList_GET_ITEM(list, ii);
-		if (!PyInt_Check(val)) {
+        if (!PyInt_Check(val)) {
 			PyErr_SetString(PyExc_TypeError, msg);
 			return 0; /* fail */
 		}
@@ -614,7 +619,7 @@ SMBus_set_pec(SMBus *self, PyObject *val, void *closure)
 		return -1;
 	}
 	else if (pec == -1) {
-		PyErr_SetString(PyExc_TypeError, 
+		PyErr_SetString(PyExc_TypeError,
 			"The pec attribute must be a boolean.");
 		return -1;
 	}
@@ -637,8 +642,7 @@ static PyGetSetDef SMBus_getset[] = {
 };
 
 static PyTypeObject SMBus_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+    PyVarObject_HEAD_INIT(NULL, 0)
 	"smbus.SMBus",			/* tp_name */
 	sizeof(SMBus),			/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -682,20 +686,38 @@ static PyMethodDef SMBus_module_methods[] = {
 	{NULL}
 };
 
-#ifndef PyMODINIT_FUNC	/* declarations for DLL import/export */
-#define PyMODINIT_FUNC void
+#if PY_MAJOR_VERSION >= 3
+  #define MOD_ERROR_VAL NULL
+  #define MOD_SUCCESS_VAL(val) val
+  #define MOD_INIT(name) PyMODINIT_FUNC PyInit_##name(void)
+  #define MOD_DEF(ob, name, doc, methods) \
+          static struct PyModuleDef moduledef = { \
+            PyModuleDef_HEAD_INIT, name, doc, -1, methods, }; \
+          ob = PyModule_Create(&moduledef);
+#else
+  #define MOD_ERROR_VAL
+  #define MOD_SUCCESS_VAL(val)
+  #define MOD_INIT(name) void init##name(void)
+  #define MOD_DEF(ob, name, doc, methods) \
+          ob = Py_InitModule3(name, methods, doc);
 #endif
-PyMODINIT_FUNC
-initsmbus(void) 
+
+MOD_INIT(smbus)
 {
-	PyObject* m;
+    PyObject *m;
 
-	if (PyType_Ready(&SMBus_type) < 0)
-		return;
+    MOD_DEF(m, "smbus", SMBus_module_doc,
+            SMBus_module_methods)
 
-	m = Py_InitModule3("smbus", SMBus_module_methods, SMBus_module_doc);
+    if (m == NULL)
+        return MOD_ERROR_VAL;
 
-	Py_INCREF(&SMBus_type);
-	PyModule_AddObject(m, "SMBus", (PyObject *)&SMBus_type);
+    if (PyType_Ready(&SMBus_type) < 0)
+        return MOD_ERROR_VAL;
+
+    Py_INCREF(&SMBus_type);
+    PyModule_AddObject(m, "SMBus", (PyObject *)&SMBus_type);
+
+    return MOD_SUCCESS_VAL(m);
 }
 

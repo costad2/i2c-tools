@@ -11,4 +11,12 @@ setup(	name="smbus",
 	maintainer_email="linux-i2c@vger.kernel.org",
 	license="GPLv2",
 	url="http://lm-sensors.org/",
-	ext_modules=[Extension("smbus", ["smbusmodule.c"])])
+	ext_modules=[
+	                Extension(
+	                name="smbus",
+	                sources=["smbusmodule.c"],
+	                library_dirs=["../lib"],
+	                libraries=["i2c"]
+	                )
+	            ]
+    )
