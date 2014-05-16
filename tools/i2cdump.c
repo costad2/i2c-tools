@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 		help();
 		exit(1);
 	}
-	i2cbus = lookup_i2c_bus(argv[flags+1]);
+	i2cbus = i2c_lookup_i2c_bus(argv[flags+1]);
 	if (i2cbus < 0) {
 		help();
 		exit(1);
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
 		help();
 		exit(1);
 	}
-	address = parse_i2c_address(argv[flags+2]);
+	address = i2c_parse_i2c_address(argv[flags+2]);
 	if (address < 0) {
 		help();
 		exit(1);
@@ -262,10 +262,10 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	file = open_i2c_dev(i2cbus, filename, sizeof(filename), 0);
+	file = i2c_open_i2c_dev(i2cbus, filename, sizeof(filename), 0);
 	if (file < 0
 	 || check_funcs(file, size, pec)
-	 || set_slave_addr(file, address, force))
+	 || i2c_set_slave_addr(file, address, force))
 		exit(1);
 
 	if (pec) {

@@ -69,7 +69,7 @@ static enum adt i2c_get_funcs(int i2cbus)
 	char filename[20];
 	enum adt ret;
 
-	file = open_i2c_dev(i2cbus, filename, sizeof(filename), 1);
+	file = i2c_open_i2c_dev(i2cbus, filename, sizeof(filename), 1);
 	if (file < 0)
 		return adt_unknown;
 
@@ -332,7 +332,7 @@ done:
  * Parse an I2CBUS command line argument and return the corresponding
  * bus number, or a negative value if the bus is invalid.
  */
-int lookup_i2c_bus(const char *i2cbus_arg)
+int i2c_lookup_i2c_bus(const char *i2cbus_arg)
 {
 	unsigned long i2cbus;
 	char *end;
@@ -354,7 +354,7 @@ int lookup_i2c_bus(const char *i2cbus_arg)
  * Parse a CHIP-ADDRESS command line argument and return the corresponding
  * chip address, or a negative value if the address is invalid.
  */
-int parse_i2c_address(const char *address_arg)
+int i2c_parse_i2c_address(const char *address_arg)
 {
 	long address;
 	char *end;
@@ -373,7 +373,7 @@ int parse_i2c_address(const char *address_arg)
 	return address;
 }
 
-int open_i2c_dev(int i2cbus, char *filename, size_t size, int quiet)
+int i2c_open_i2c_dev(int i2cbus, char *filename, size_t size, int quiet)
 {
 	int file;
 
@@ -402,7 +402,7 @@ int open_i2c_dev(int i2cbus, char *filename, size_t size, int quiet)
 	return file;
 }
 
-int set_slave_addr(int file, int address, int force)
+int i2c_set_slave_addr(int file, int address, int force)
 {
 	/* With force, let the user read from/write to the registers
 	   even when a driver is also running */

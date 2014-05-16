@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
 		help();
 		exit(1);
 	}
-	i2cbus = lookup_i2c_bus(argv[flags+1]);
+	i2cbus = i2c_lookup_i2c_bus(argv[flags+1]);
 	if (i2cbus < 0) {
 		help();
 		exit(1);
@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	file = open_i2c_dev(i2cbus, filename, sizeof(filename), 0);
+	file = i2c_open_i2c_dev(i2cbus, filename, sizeof(filename), 0);
 	if (file < 0) {
 		exit(1);
 	}
