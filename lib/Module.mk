@@ -18,7 +18,7 @@ LIB_CFLAGS	:= -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual \
 # interface is changed in a backward incompatible way.  The interface is
 # defined by the public header files - in this case they are only smbus.h.
 LIB_MAINVER	:= 0
-LIB_MINORVER	:= 1.0
+LIB_MINORVER	:= 2.0
 LIB_VER		:= $(LIB_MAINVER).$(LIB_MINORVER)
 
 # The shared and static library names
@@ -29,17 +29,17 @@ LIB_STLIBNAME	:= libi2c.a
 
 LIB_TARGETS	:= $(LIB_SHLIBNAME)
 LIB_LINKS	:= $(LIB_SHSONAME) $(LIB_SHBASENAME)
-LIB_OBJECTS	:= smbus.o
+LIB_OBJECTS	:= smbus.o busses.o
 ifeq ($(BUILD_STATIC_LIB),1)
 LIB_TARGETS	+= $(LIB_STLIBNAME)
-LIB_OBJECTS	+= smbus.ao
+LIB_OBJECTS	+= smbus.ao busses.ao
 endif
 
 #
 # Libraries
 #
 
-$(LIB_DIR)/$(LIB_SHLIBNAME): $(LIB_DIR)/smbus.o
+$(LIB_DIR)/$(LIB_SHLIBNAME): $(LIB_DIR)/smbus.o $(LIB_DIR)/busses.o
 	$(CC) -shared $(LDFLAGS) -Wl,--version-script=$(LIB_DIR)/libi2c.map -Wl,-soname,$(LIB_SHSONAME) -o $@ $^ -lc
 
 $(LIB_DIR)/$(LIB_SHSONAME):
@@ -50,7 +50,7 @@ $(LIB_DIR)/$(LIB_SHBASENAME):
 	$(RM) $@
 	$(LN) $(LIB_SHLIBNAME) $@
 
-$(LIB_DIR)/$(LIB_STLIBNAME): $(LIB_DIR)/smbus.ao
+$(LIB_DIR)/$(LIB_STLIBNAME): $(LIB_DIR)/smbus.ao $(LIB_DIR)/busses.ao
 	$(RM) $@
 	$(AR) rcvs $@ $^
 
@@ -64,6 +64,12 @@ $(LIB_DIR)/smbus.o: $(LIB_DIR)/smbus.c $(INCLUDE_DIR)/i2c/smbus.h
 	$(CC) $(SOCFLAGS) $(LIB_CFLAGS) -c $< -o $@
 
 $(LIB_DIR)/smbus.ao: $(LIB_DIR)/smbus.c $(INCLUDE_DIR)/i2c/smbus.h
+	$(CC) $(CFLAGS) $(LIB_CFLAGS) -c $< -o $@
+
+$(LIB_DIR)/busses.o: $(LIB_DIR)/busses.c $(INCLUDE_DIR)/i2c/busses.h
+	$(CC) $(SOCFLAGS) $(LIB_CFLAGS) -c $< -o $@
+
+$(LIB_DIR)/busses.ao: $(LIB_DIR)/busses.c $(INCLUDE_DIR)/i2c/busses.h
 	$(CC) $(CFLAGS) $(LIB_CFLAGS) -c $< -o $@
 
 #

@@ -39,9 +39,20 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <i2c/busses.h>
-#include "i2cbusses.h"
 #include <linux/i2c.h>
 #include <linux/i2c-dev.h>
+
+struct i2c_adap {
+	int nr;
+	char *name;
+	const char *funcs;
+	const char *algo;
+};
+
+struct i2c_adap *gather_i2c_busses(void);
+void free_adapters(struct i2c_adap *adapters);
+
+#define MISSING_FUNC_FMT	"Error: Adapter does not have %s capability\n"
 
 enum adt { adt_dummy, adt_isa, adt_i2c, adt_smbus, adt_unknown };
 
@@ -293,4 +304,126 @@ found:
 
 done:
 	return adapters;
+}
+
+static int lookup_i2c_bus_by_name(const char *bus_name)
+{
+	struct i2c_adap *adapters;
+	int i, i2cbus = -1;
+
+	adapters = gather_i2c_busses();
+	if (adapters == NULL) {
+		fprintf(stderr, "Error: Out of memory!\n");
+		return -3;
+	}
+
+	/* Walk the list of i2c busses, looking for the one with the
+	   right name */
+	for (i = 0; adapters[i].name; i++) {
+		if (strcmp(adapters[i].name, bus_name) == 0) {
+			if (i2cbus >= 0) {
+				fprintf(stderr,
+					"Error: I2C bus name is not unique!\n");
+				i2cbus = -4;
+				goto done;
+			}
+			i2cbus = adapters[i].nr;
+		}
+	}
+
+	if (i2cbus == -1)
+		fprintf(stderr, "Error: I2C bus name doesn't match any "
+			"bus present!\n");
+
+done:
+	free_adapters(adapters);
+	return i2cbus;
+}
+
+/*
+ * Parse an I2CBUS command line argument and return the corresponding
+ * bus number, or a negative value if the bus is invalid.
+ */
+int i2c_lookup_i2c_bus(const char *i2cbus_arg)
+{
+	unsigned long i2cbus;
+	char *end;
+
+	i2cbus = strtoul(i2cbus_arg, &end, 0);
+	if (*end || !*i2cbus_arg) {
+		/* Not a number, maybe a name? */
+		return lookup_i2c_bus_by_name(i2cbus_arg);
+	}
+	if (i2cbus > 0xFFFFF) {
+		fprintf(stderr, "Error: I2C bus out of range!\n");
+		return -2;
+	}
+
+	return i2cbus;
+}
+
+/*
+ * Parse a CHIP-ADDRESS command line argument and return the corresponding
+ * chip address, or a negative value if the address is invalid.
+ */
+int i2c_parse_i2c_address(const char *address_arg)
+{
+	long address;
+	char *end;
+
+	address = strtol(address_arg, &end, 0);
+	if (*end || !*address_arg) {
+		fprintf(stderr, "Error: Chip address is not a number!\n");
+		return -1;
+	}
+	if (address < 0x03 || address > 0x77) {
+		fprintf(stderr, "Error: Chip address out of range "
+			"(0x03-0x77)!\n");
+		return -2;
+	}
+
+	return address;
+}
+
+int i2c_open_i2c_dev(int i2cbus, char *filename, size_t size, int quiet)
+{
+	int file;
+
+	snprintf(filename, size, "/dev/i2c/%d", i2cbus);
+	filename[size - 1] = '\0';
+	file = open(filename, O_RDWR);
+
+	if (file < 0 && (errno == ENOENT || errno == ENOTDIR)) {
+		sprintf(filename, "/dev/i2c-%d", i2cbus);
+		file = open(filename, O_RDWR);
+	}
+
+	if (file < 0 && !quiet) {
+		if (errno == ENOENT) {
+			fprintf(stderr, "Error: Could not open file "
+				"`/dev/i2c-%d' or `/dev/i2c/%d': %s\n",
+				i2cbus, i2cbus, strerror(ENOENT));
+		} else {
+			fprintf(stderr, "Error: Could not open file "
+				"`%s': %s\n", filename, strerror(errno));
+			if (errno == EACCES)
+				fprintf(stderr, "Run as root?\n");
+		}
+	}
+
+	return file;
+}
+
+int i2c_set_slave_addr(int file, int address, int force)
+{
+	/* With force, let the user read from/write to the registers
+	   even when a driver is also running */
+	if (ioctl(file, force ? I2C_SLAVE_FORCE : I2C_SLAVE, address) < 0) {
+		fprintf(stderr,
+			"Error: Could not set address to 0x%02x: %s\n",
+			address, strerror(errno));
+		return -errno;
+	}
+
+	return 0;
 }

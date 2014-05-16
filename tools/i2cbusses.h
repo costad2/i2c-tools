@@ -22,8 +22,6 @@
 #ifndef _I2CBUSSES_H
 #define _I2CBUSSES_H
 
-#include <unistd.h>
-
 struct i2c_adap {
 	int nr;
 	char *name;
@@ -33,11 +31,6 @@ struct i2c_adap {
 
 struct i2c_adap *gather_i2c_busses(void);
 void free_adapters(struct i2c_adap *adapters);
-
-int i2c_lookup_i2c_bus(const char *i2cbus_arg);
-int i2c_parse_i2c_address(const char *address_arg);
-int i2c_open_i2c_dev(int i2cbus, char *filename, size_t size, int quiet);
-int i2c_set_slave_addr(int file, int address, int force);
 
 #define MISSING_FUNC_FMT	"Error: Adapter does not have %s capability\n"
 
