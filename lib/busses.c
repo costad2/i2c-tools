@@ -27,6 +27,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/statfs.h>
 #include <sys/param.h>	/* for NAME_MAX */
 #include <sys/ioctl.h>
 #include <string.h>
@@ -41,6 +42,18 @@
 #include <i2c/busses.h>
 #include <linux/i2c.h>
 #include <linux/i2c-dev.h>
+#include "list.h"
+
+#ifndef SYSFS_MAGIC
+#define SYSFS_MAGIC 0x62656572
+#endif // SYSFS_MAGIC
+
+#ifndef ATTR_MAX
+#define ATTR_MAX    128
+#endif // ATTR_MAX
+
+int foundsysfs = 0;
+char sysfs_mount[NAME_MAX];
 
 struct i2c_adap {
 	int nr;
@@ -49,8 +62,118 @@ struct i2c_adap {
 	const char *algo;
 };
 
-struct i2c_adap *gather_i2c_busses(void);
-void free_adapters(struct i2c_adap *adapters);
+/*
+ * An i2c_dev represents an i2c_adapter ... an I2C or SMBus master, not a
+ * slave (i2c_client) with which messages will be exchanged.  It's coupled
+ * with a character special file which is accessed by user mode drivers.
+ *
+ * The list of i2c_dev structures is parallel to the i2c_adapter lists
+ * maintained by the driver model, and is updated using bus notifications.
+ */
+struct i2c_dev {
+	struct list_head list;
+	struct i2c_adap *adap;
+	dev_t *dev;
+};
+
+
+/* returns !0 if sysfs filesystem was found, 0 otherwise */
+static int init_sysfs(void) {
+	struct statfs statfsbuf;
+
+	snprintf(sysfs_mount, NAME_MAX, "%s", "/sys");
+	if (statfs(sysfs_mount, &statfsbuf) < 0 || statfsbuf.f_type != SYSFS_MAGIC)
+		return (0);
+
+	return (1);
+}
+
+/*
+ * Read an attribute from sysfs
+ * Returns a pointer to a freshly allocated string; free it yourself.
+ * If the file doesn't exist or can't be read, NULL is returned.
+ */
+static char *sysfs_read_attr(const char *device, const char *attr) {
+	char path[NAME_MAX];
+	char buf[ATTR_MAX], *p;
+	FILE *f;
+
+	snprintf(path, NAME_MAX, "%s/%s", device, attr);
+
+	if (!(f = fopen(path, "r")))
+		return NULL;
+	p = fgets(buf, ATTR_MAX, f);
+	fclose(f);
+	if (!p)
+		return NULL;
+
+	/* Last byte is a '\n'; chop that off */
+	p = strndup(buf, strlen(buf) - 1);
+	if (!p)
+		perror("Out of memory");
+	return (p);
+}
+
+/*
+ * Call an arbitrary function for each device of the given bus type
+ * Returns 0 on success (all calls returned 0), a positive errno for
+ * local errors, or a negative error value if any call fails.
+ */
+static int sysfs_foreach_busdev(const char *bus_type,
+		int (*func)(const char *, const char *)) {
+	char path[NAME_MAX];
+	int path_off, ret;
+	DIR *dir;
+	struct dirent *ent;
+
+	path_off = snprintf(path, NAME_MAX, "%s/bus/%s/devices", sysfs_mount,
+			bus_type);
+	if (!(dir = opendir(path)))
+		return errno;
+
+	ret = 0;
+	while (!ret && (ent = readdir(dir))) {
+		if (ent->d_name[0] == '.') /* skip hidden entries */
+			continue;
+
+		snprintf(path + path_off, NAME_MAX - path_off, "/%s", ent->d_name);
+		ret = func(path, ent->d_name);
+	}
+
+	closedir(dir);
+	return (ret);
+}
+
+/*
+ * Call an arbitrary function for each class device of the given class
+ * Returns 0 on success (all calls returned 0), a positive errno for
+ * local errors, or a negative error value if any call fails.
+ */
+static int sysfs_foreach_classdev(const char *class_name,
+		int (*func)(const char *, const char *)) {
+	char path[NAME_MAX];
+	int path_off, ret;
+	DIR *dir;
+	struct dirent *ent;
+
+	path_off = snprintf(path, NAME_MAX, "%s/class/%s", sysfs_mount, class_name);
+	if (!(dir = opendir(path)))
+		return errno;
+
+	ret = 0;
+	while (!ret && (ent = readdir(dir))) {
+		if (ent->d_name[0] == '.') /* skip hidden entries */
+			continue;
+
+		snprintf(path + path_off, NAME_MAX - path_off, "/%s", ent->d_name);
+		ret = func(path, ent->d_name);
+	}
+
+	closedir(dir);
+	return (ret);
+}
+
+static struct i2c_adap *gather_i2c_busses(void);
 
 #define MISSING_FUNC_FMT	"Error: Adapter does not have %s capability\n"
 
@@ -100,18 +223,7 @@ static enum adt i2c_get_funcs(int i2cbus)
 	return ret;
 }
 
-/* Remove trailing spaces from a string
-   Return the new string length including the trailing NUL */
-static int rtrim(char *s)
-{
-	int i;
-
-	for (i = strlen(s) - 1; i >= 0 && (s[i] == ' ' || s[i] == '\n'); i--)
-		s[i] = '\0';
-	return i + 2;
-}
-
-void free_adapters(struct i2c_adap *adapters)
+static void free_adapters(struct i2c_adap *adapters)
 {
 	int i;
 
@@ -140,14 +252,13 @@ static struct i2c_adap *more_adapters(struct i2c_adap *adapters, int n)
 	return new_adapters;
 }
 
-struct i2c_adap *gather_i2c_busses(void)
+static struct i2c_adap *gather_i2c_busses(void)
 {
 	char s[120];
 	struct dirent *de, *dde;
 	DIR *dir, *ddir;
 	FILE *f;
-	char fstype[NAME_MAX], sysfs[NAME_MAX], n[NAME_MAX];
-	int foundsysfs = 0;
+	char sysfs[NAME_MAX], n[NAME_MAX];
 	int count=0;
 	struct i2c_adap *adapters;
 
@@ -155,66 +266,13 @@ struct i2c_adap *gather_i2c_busses(void)
 	if (!adapters)
 		return NULL;
 
-	/* look in /proc/bus/i2c */
-	if ((f = fopen("/proc/bus/i2c", "r"))) {
-		while (fgets(s, 120, f)) {
-			char *algo, *name, *type, *all;
-			int len_algo, len_name, len_type;
-			int i2cbus;
+	if (foundsysfs == 0)
+		foundsysfs = init_sysfs();
 
-			algo = strrchr(s, '\t');
-			*(algo++) = '\0';
-			len_algo = rtrim(algo);
-
-			name = strrchr(s, '\t');
-			*(name++) = '\0';
-			len_name = rtrim(name);
-
-			type = strrchr(s, '\t');
-			*(type++) = '\0';
-			len_type = rtrim(type);
-
-			sscanf(s, "i2c-%d", &i2cbus);
-
-			if ((count + 1) % BUNCH == 0) {
-				/* We need more space */
-				adapters = more_adapters(adapters, count + 1);
-				if (!adapters)
-					return NULL;
-			}
-
-			all = malloc(len_name + len_type + len_algo);
-			if (all == NULL) {
-				free_adapters(adapters);
-				return NULL;
-			}
-			adapters[count].nr = i2cbus;
-			adapters[count].name = strcpy(all, name);
-			adapters[count].funcs = strcpy(all + len_name, type);
-			adapters[count].algo = strcpy(all + len_name + len_type,
-						      algo);
-			count++;
-		}
-		fclose(f);
-		goto done;
-	}
-
-	/* look in sysfs */
-	/* First figure out where sysfs was mounted */
-	if ((f = fopen("/proc/mounts", "r")) == NULL) {
-		goto done;
-	}
-	while (fgets(n, NAME_MAX, f)) {
-		sscanf(n, "%*[^ ] %[^ ] %[^ ] %*s\n", sysfs, fstype);
-		if (strcasecmp(fstype, "sysfs") == 0) {
-			foundsysfs++;
-			break;
-		}
-	}
-	fclose(f);
-	if (! foundsysfs) {
-		goto done;
-	}
+	if (foundsysfs)
+		sprintf(sysfs, "%s", sysfs_mount);
+	else
+		return NULL;
 
 	/* Bus numbers in i2c-adapter don't necessarily match those in
 	   i2c-dev and what we really care about are the i2c-dev numbers.
@@ -224,14 +282,13 @@ struct i2c_adap *gather_i2c_busses(void)
 		goto done;
 	/* go through the busses */
 	while ((de = readdir(dir)) != NULL) {
-		if (!strcmp(de->d_name, "."))
-			continue;
-		if (!strcmp(de->d_name, ".."))
+		if (de->d_name[0] == '.') /* skip hidden entries */
 			continue;
 
 		/* this should work for kernels 2.6.5 or higher and */
 		/* is preferred because is unambiguous */
 		sprintf(n, "%s/%s/name", sysfs, de->d_name);
+
 		f = fopen(n, "r");
 		/* this seems to work for ISA */
 		if(f == NULL) {
@@ -246,9 +303,7 @@ struct i2c_adap *gather_i2c_busses(void)
 			if(!(ddir = opendir(n)))
 				continue;
 			while ((dde = readdir(ddir)) != NULL) {
-				if (!strcmp(dde->d_name, "."))
-					continue;
-				if (!strcmp(dde->d_name, ".."))
+				if (dde->d_name[0] == '.') /* skip hidden entries */
 					continue;
 				if ((!strncmp(dde->d_name, "i2c-", 4))) {
 					sprintf(n, "%s/%s/device/%s/name",
@@ -385,35 +440,6 @@ int i2c_parse_i2c_address(const char *address_arg)
 	return address;
 }
 
-int i2c_open_i2c_dev(int i2cbus, char *filename, size_t size, int quiet)
-{
-	int file;
-
-	snprintf(filename, size, "/dev/i2c/%d", i2cbus);
-	filename[size - 1] = '\0';
-	file = open(filename, O_RDWR);
-
-	if (file < 0 && (errno == ENOENT || errno == ENOTDIR)) {
-		sprintf(filename, "/dev/i2c-%d", i2cbus);
-		file = open(filename, O_RDWR);
-	}
-
-	if (file < 0 && !quiet) {
-		if (errno == ENOENT) {
-			fprintf(stderr, "Error: Could not open file "
-				"`/dev/i2c-%d' or `/dev/i2c/%d': %s\n",
-				i2cbus, i2cbus, strerror(ENOENT));
-		} else {
-			fprintf(stderr, "Error: Could not open file "
-				"`%s': %s\n", filename, strerror(errno));
-			if (errno == EACCES)
-				fprintf(stderr, "Run as root?\n");
-		}
-	}
-
-	return file;
-}
-
 int i2c_set_slave_addr(int file, int address, int force)
 {
 	/* With force, let the user read from/write to the registers
@@ -422,6 +448,36 @@ int i2c_set_slave_addr(int file, int address, int force)
 		fprintf(stderr,
 			"Error: Could not set address to 0x%02x: %s\n",
 			address, strerror(errno));
+		return -errno;
+	}
+
+	return 0;
+}
+
+/* set timeout in units of 10 ms */
+int i2c_set_adapter_timeout(int file, int timeout)
+{
+	unsigned long timeout_val = 3;
+	if (timeout)
+		timeout_val = (unsigned long)timeout;
+
+	if (ioctl(file, I2C_TIMEOUT, timeout_val) < 0) {
+		fprintf(stderr,"Error: Could not set timeout to %d: %s\n",timeout, strerror(errno));
+		return -errno;
+	}
+
+	return 0;
+}
+
+/* number of times a device address should be polled when not acknowledging */
+int i2c_set_adapter_retries(int file, int retries)
+{
+	unsigned long retries_val = 2;
+	if (retries)
+		retries_val = (unsigned long)retries;
+
+	if (ioctl(file, I2C_RETRIES, retries_val) < 0) {
+		fprintf(stderr,"Error: Could not set retries to %d: %s\n", retries, strerror(errno));
 		return -errno;
 	}
 
