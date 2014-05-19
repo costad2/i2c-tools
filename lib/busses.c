@@ -440,6 +440,29 @@ int i2c_parse_i2c_address(const char *address_arg)
 	return address;
 }
 
+
+int i2c_open_i2c_dev(int i2cbus, char *filename, size_t size, int quiet) {
+	int file = -1;
+
+	snprintf(filename, size,"/dev/i2c-%d", i2cbus);
+	file = open(filename, O_RDWR);
+
+	if (file < 0 && !quiet) {
+		if (errno == ENOENT) {
+			fprintf(stderr, "Error: Could not open file "
+					"`/dev/i2c-%d': %s\n", i2cbus, strerror(ENOENT));
+		} else {
+			fprintf(stderr, "Error: Could not open file "
+					"`%s': %s\n", filename, strerror(errno));
+			if (errno == EACCES)
+				fprintf(stderr, "Run as root?\n");
+		}
+	}
+
+	return (file);
+}
+
+
 int i2c_set_slave_addr(int file, int address, int force)
 {
 	/* With force, let the user read from/write to the registers
