@@ -31,6 +31,8 @@ struct i2c_adap {
 
 struct i2c_adap *gather_i2c_busses(void);
 void free_adapters(struct i2c_adap *adapters);
+int i2c_lookup_i2c_bus(const char *i2cbus_arg);
+int i2c_parse_i2c_address(const char *address_arg);
 
 #define MISSING_FUNC_FMT	"Error: Adapter does not have %s capability\n"
 

@@ -9,7 +9,7 @@
 
 INCLUDE_DIR	:= include
 
-INCLUDE_TARGETS	:= i2c/smbus.h
+INCLUDE_TARGETS	:= i2c/smbus.h i2c/busses.h
 
 #
 # Commands
