@@ -5,6 +5,7 @@
     Copyright (c) 1999-2003  Frodo Looijaard <frodol@dds.nl> and
                              Mark D. Studebaker <mdsxyz123@yahoo.com>
     Copyright (C) 2008-2012  Jean Delvare <jdelvare@suse.de>
+    Copyright (C) 2014 Danielle Costantino <danielle.costantino@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -70,91 +71,6 @@ static int init_sysfs(void) {
 		return (0);
 
 	return (1);
-}
-
-/*
- * Read an attribute from sysfs
- * Returns a pointer to a freshly allocated string; free it yourself.
- * If the file doesn't exist or can't be read, NULL is returned.
- */
-static char *sysfs_read_attr(const char *device, const char *attr) {
-	char path[NAME_MAX];
-	char buf[ATTR_MAX], *p;
-	FILE *f;
-
-	snprintf(path, NAME_MAX, "%s/%s", device, attr);
-
-	if (!(f = fopen(path, "r")))
-		return NULL;
-	p = fgets(buf, ATTR_MAX, f);
-	fclose(f);
-	if (!p)
-		return NULL;
-
-	/* Last byte is a '\n'; chop that off */
-	p = strndup(buf, strlen(buf) - 1);
-	if (!p)
-		perror("Out of memory");
-	return (p);
-}
-
-/*
- * Call an arbitrary function for each device of the given bus type
- * Returns 0 on success (all calls returned 0), a positive errno for
- * local errors, or a negative error value if any call fails.
- */
-static int sysfs_foreach_busdev(const char *bus_type,
-		int (*func)(const char *, const char *)) {
-	char path[NAME_MAX];
-	int path_off, ret;
-	DIR *dir;
-	struct dirent *ent;
-
-	path_off = snprintf(path, NAME_MAX, "%s/bus/%s/devices", sysfs_mount,
-			bus_type);
-	if (!(dir = opendir(path)))
-		return errno;
-
-	ret = 0;
-	while (!ret && (ent = readdir(dir))) {
-		if (ent->d_name[0] == '.') /* skip hidden entries */
-			continue;
-
-		snprintf(path + path_off, NAME_MAX - path_off, "/%s", ent->d_name);
-		ret = func(path, ent->d_name);
-	}
-
-	closedir(dir);
-	return (ret);
-}
-
-/*
- * Call an arbitrary function for each class device of the given class
- * Returns 0 on success (all calls returned 0), a positive errno for
- * local errors, or a negative error value if any call fails.
- */
-static int sysfs_foreach_classdev(const char *class_name,
-		int (*func)(const char *, const char *)) {
-	char path[NAME_MAX];
-	int path_off, ret;
-	DIR *dir;
-	struct dirent *ent;
-
-	path_off = snprintf(path, NAME_MAX, "%s/class/%s", sysfs_mount, class_name);
-	if (!(dir = opendir(path)))
-		return errno;
-
-	ret = 0;
-	while (!ret && (ent = readdir(dir))) {
-		if (ent->d_name[0] == '.') /* skip hidden entries */
-			continue;
-
-		snprintf(path + path_off, NAME_MAX - path_off, "/%s", ent->d_name);
-		ret = func(path, ent->d_name);
-	}
-
-	closedir(dir);
-	return (ret);
 }
 
 static struct i2c_adap *gather_i2c_busses(void);

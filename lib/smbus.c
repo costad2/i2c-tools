@@ -4,6 +4,7 @@
     Copyright (C) 1995-1997  Simon G. Vogl
     Copyright (C) 1998-1999  Frodo Looijaard <frodol@dds.nl>
     Copyright (C) 2012-2013  Jean Delvare <jdelvare@suse.de>
+    Copyright (C) 2014 Danielle Costantino <danielle.costantino@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
