@@ -42,7 +42,6 @@
 #include <i2c/busses.h>
 #include <linux/i2c.h>
 #include <linux/i2c-dev.h>
-#include "list.h"
 
 #ifndef SYSFS_MAGIC
 #define SYSFS_MAGIC 0x62656572
@@ -61,21 +60,6 @@ struct i2c_adap {
 	const char *funcs;
 	const char *algo;
 };
-
-/*
- * An i2c_dev represents an i2c_adapter ... an I2C or SMBus master, not a
- * slave (i2c_client) with which messages will be exchanged.  It's coupled
- * with a character special file which is accessed by user mode drivers.
- *
- * The list of i2c_dev structures is parallel to the i2c_adapter lists
- * maintained by the driver model, and is updated using bus notifications.
- */
-struct i2c_dev {
-	struct list_head list;
-	struct i2c_adap *adap;
-	dev_t *dev;
-};
-
 
 /* returns !0 if sysfs filesystem was found, 0 otherwise */
 static int init_sysfs(void) {
@@ -461,7 +445,6 @@ int i2c_open_i2c_dev(int i2cbus, char *filename, size_t size, int quiet) {
 
 	return (file);
 }
-
 
 int i2c_set_slave_addr(int file, int address, int force)
 {
