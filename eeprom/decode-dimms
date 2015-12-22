@@ -60,7 +60,7 @@ $revision =~ s/ \([^()]*\)//;
  "RCA", "Raytheon", "Conexant (Rockwell)", "Seeq",
  "NXP (former Signetics, Philips Semi.)", "Synertek", "Texas Instruments", "Toshiba",
  "Xicor", "Zilog", "Eurotechnique", "Mitsubishi",
- "Lucent (AT&T)", "Exel", "Atmel", "SGS/Thomson",
+ "Lucent (AT&T)", "Exel", "Atmel", "STMicroelectronics (former SGS/Thomson)",
  "Lattice Semi.", "NCR", "Wafer Scale Integration", "IBM",
  "Tristar", "Visic", "Intl. CMOS Technology", "SSSI",
  "MicrochipTechnology", "Ricoh Ltd.", "VLSI", "Micron Technology",
@@ -99,7 +99,7 @@ $revision =~ s/ \([^()]*\)//;
  "Century", "Hal Computers", "Rohm Company Ltd.", "Juniper Networks",
  "Libit Signal Processing", "Mushkin Enhanced Memory", "Tundra Semiconductor", "Adaptec Inc.",
  "LightSpeed Semi.", "ZSP Corp.", "AMIC Technology", "Adobe Systems",
- "Dynachip", "PNY Electronics", "Newport Digital", "MMC Networks",
+ "Dynachip", "PNY Technologies Inc. (former PNY Electronics)", "Newport Digital", "MMC Networks",
  "T Square", "Seiko Epson", "Broadcom", "Viking Components",
  "V3 Semiconductor", "Flextronics (former Orbit)", "Suwa Electronics", "Transmeta",
  "Micron CMS", "American Computer & Digital Components Inc", "Enhance 3000 Inc", "Tower Semiconductor",
@@ -127,7 +127,7 @@ $revision =~ s/ \([^()]*\)//;
  "HADCO Corporation", "Corsair", "Actrans System Inc.", "ALPHA Technologies",
  "Silicon Laboratories, Inc. (Cygnal)", "Artesyn Technologies", "Align Manufacturing", "Peregrine Semiconductor",
  "Chameleon Systems", "Aplus Flash Technology", "MIPS Technologies", "Chrysalis ITS",
- "ADTEC Corporation", "Kentron Technologies", "Win Technologies", "Tachyon Semiconductor (former ASIC Designs Inc.)",
+ "ADTEC Corporation", "Kentron Technologies", "Win Technologies", "Tezzaron Semiconductor (former Tachyon Semiconductor)",
  "Extreme Packet Devices", "RF Micro Devices", "Siemens AG", "Sarnoff Corporation",
  "Itautec SA (former Itautec Philco SA)", "Radiata Inc.", "Benchmark Elect. (AVEX)", "Legend",
  "SpecTek Incorporated", "Hi/fn", "Enikia Incorporated", "SwitchOn Networks",
@@ -177,7 +177,7 @@ $revision =~ s/ \([^()]*\)//;
  "SiCon Video", "NanoAmp Solutions", "Ericsson Technology", "PrairieComm",
  "Mitac International", "Layer N Networks", "MtekVision", "Allegro Networks",
  "Marvell Semiconductors", "Netergy Microelectronic", "NVIDIA", "Internet Machines",
- "Peak Electronics", "Litchfield Communication", "Accton Technology", "Teradiant Networks",
+ "Memorysolution GmbH (former Peak Electronics)", "Litchfield Communication", "Accton Technology", "Teradiant Networks",
  "Scaleo Chip (former Europe Technologies)", "Cortina Systems", "RAM Components", "Raqia Networks",
  "ClearSpeed", "Matsushita Battery", "Xelerated", "SimpleTech",
  "Utron Technology", "Astec International", "AVM gmbH", "Redux Communications",
@@ -189,7 +189,7 @@ $revision =~ s/ \([^()]*\)//;
  "Potentia Power Systems", "C-guys Incorporated", "Digital Communications Technology Incorporated", "Silicon-Based Technology",
  "Fulcrum Microsystems", "Positivo Informatica Ltd", "XIOtech Corporation", "PortalPlayer",
  "Zhiying Software", "Parker Vision, Inc. (former Direct2Data)", "Phonex Broadband", "Skyworks Solutions",
- "Entropic Communications", "Pacific Force Technology", "Zensys A/S", "Legend Silicon Corp.",
+ "Entropic Communications", "I'M Intelligent Memory Ltd (former Pacific Force Technology)", "Zensys A/S", "Legend Silicon Corp.",
  "sci-worx GmbH", "SMSC (former Oasis Silicon Systems)", "Renesas Electronics (former Renesas Technology)", "Raza Microelectronics",
  "Phyworks", "MediaTek", "Non-cents Productions", "US Modular",
  "Wintegra Ltd", "Mathstar", "StarCore", "Oplus Technologies",
@@ -302,7 +302,42 @@ $revision =~ s/ \([^()]*\)//;
  "High Bridge Solutions Industria Eletronica", "Transcend Technology Co. Ltd.",
  "Everspin Technologies", "Hon-Hai Precision", "Smart Storage Systems", "Toumaz Group",
  "Zentel Electronics Corporation", "Panram International Corporation",
- "Silicon Space Technology"]
+ "Silicon Space Technology", "LITE-ON IT Corporation", "Inuitive", "HMicro",
+ "BittWare Inc.", "GLOBALFOUNDRIES", "ACPI Digital Co. Ltd", "Annapurna Labs",
+ "AcSiP Technology Corporation", "Idea! Electronic Systems", "Gowe Technology Co. Ltd",
+ "Hermes Testing Solutions Inc.", "Positivo BGH", "Intelligence Silicon Technology"],
+["3D PLUS", "Diehl Aerospace", "Fairchild", "Mercury Systems",
+ "Sonics Inc.", "GE Intelligent Platforms GmbH & Co.", "Shenzhen Jinge Information Co. Ltd",
+ "SCWW", "Silicon Motion Inc.", "Anurag", "King Kong",
+ "FROM30 Co. Ltd", "Gowin Semiconductor Corp", "Fremont Micro Devices Ltd",
+ "Ericsson Modems", "Exelis", "Satixfy Ltd", "Galaxy Microsystems Ltd",
+ "Gloway International Co. Ltd", "Lab", "Smart Energy Instruments",
+ "Approved Memory Corporation", "Axell Corporation", "ISD Technology Limited",
+ "Phytium", "Xi'an SinoChip Semiconductor", "Ambiq Micro", "eveRAM Technology Inc.",
+ "Infomax", "Butterfly Network Inc.", "Shenzhen City Gcai Electronics",
+ "Stack Devices Corporation", "ADK Media Group", "TSP Global Co. Ltd",
+ "HighX", "Shenzhen Elicks Technology", "ISSI/Chingis", "Google Inc.",
+ "Dasima International Development", "Leahkinn Technology Limited",
+ "HIMA Paul Hildebrandt GmbH Co KG", "Keysight Technologies",
+ "Techcomp International (Fastable)", "Ancore Technology Corporation",
+ "Nuvoton", "Korea Uhbele International Group Ltd", "Ikegami Tsushinki Co. Ltd",
+ "RelChip Inc.", "Baikal Electronics", "Nemostech Inc.",
+ "Memorysolution GmbH", "Silicon Integrated Systems Corporation",
+ "Xiede", "Multilaser Components", "Flash Chi", "Jone",
+ "GCT Semiconductor Inc.", "Hong Kong Zetta Device Technology",
+ "Unimemory Technology(s) Pte Ltd", "Cuso", "Kuso",
+ "Uniquify Inc.", "Skymedi Corporation", "Core Chance Co. Ltd",
+ "Tekism Co. Ltd", "Seagate Technology PLC", "Hong Kong Gaia Group Co. Limited",
+ "Gigacom Semiconductor LLC", "V2 Technologies", "TLi", "Neotion",
+ "Lenovo", "Shenzhen Zhongteng Electronic Corp. Ltd", "Compound Photonics",
+ "Cognimem Technologies Inc.", "Shenzhen Pango Microsystems Co. Ltd",
+ "Vasekey", "Cal-Comp Industria de Semicondutores", "Eyenix Co. Ltd",
+ "Heoriady", "Accelerated Memory Production Inc.", "INVECAS Inc.",
+ "AP Memory", "Douqi Technology", "Etron Technology Inc.",
+ "Indie Semiconductor", "Socionext Inc.", "HGST", "EVGA",
+ "Audience Inc.", "EpicGear", "Vitesse Enterprise Co.",
+ "Foxtronn International Corporation", "Bretelon Inc.",
+ "Zbit Semiconductor Inc."]
 );
 
 $use_sysfs = -d '/sys/bus';
@@ -336,6 +371,21 @@ sub parity($)
 	return ($parity & 1);
 }
 
+# The code byte includes parity, the count byte does not.
+sub manufacturer_common($$)
+{
+	my ($count, $code) = @_;
+	my $manufacturer;
+
+	return "Invalid" if parity($code) != 1
+			 or ($code &= 0x7F) == 0;
+	return "Unknown" if $count >= @vendors
+			 or $code - 1 >= @{$vendors[$count]};
+	$manufacturer = $vendors[$count][$code - 1];
+	$manufacturer =~ s/ \(former .*\)$// if $opt_side_by_side;
+	return $manufacturer;
+}
+
 # New encoding format (as of DDR3) for manufacturer just has a count of
 # leading 0x7F rather than all the individual bytes.  The count bytes includes
 # parity!
@@ -344,10 +394,9 @@ sub manufacturer_ddr3($$)
 	my ($count, $code) = @_;
 	my $manufacturer;
 
-	return "Invalid" if parity($code) != 1;
-	return "Unknown" if ($code & 0x7F) - 1 > $vendors[$count & 0x7F];
-	$manufacturer = $vendors[$count & 0x7F][($code & 0x7F) - 1];
-	$manufacturer =~ s/ \(former .*\)$// if $opt_side_by_side;
+	return "Undefined" unless spd_written($count, $code);
+
+	$manufacturer = manufacturer_common($count & 0x7F, $code);
 	$manufacturer .= "? (Invalid parity)" if parity($count) != 1;
 	return $manufacturer;
 }
@@ -365,11 +414,7 @@ sub manufacturer(@)
 	}
 
 	return ("Invalid", []) unless defined $first;
-	return ("Invalid", [$first, @bytes]) if parity($first) != 1;
-	if (parity($ai) == 0) {
-		$ai |= 0x80;
-	}
-	return (manufacturer_ddr3($ai, $first), \@bytes);
+	return (manufacturer_common($ai, $first), \@bytes);
 }
 
 sub manufacturer_data(@)
@@ -1591,8 +1636,9 @@ sub decode_ddr3_sdram($)
 	printl("DLL-Off Mode supported?", ($bytes->[30] & 128) ? "Yes" : "No");
 	printl("Operating temperature range", sprintf "0-%d degrees C",
 		($bytes->[31] & 1) ? 95 : 85);
-	printl("Refresh Rate in extended temp range",
-		($bytes->[31] & 2) ? "2X" : "1X");
+	printl_cond($bytes->[31] & 1,
+		    "Refresh Rate in extended temp range",
+		    ($bytes->[31] & 2) ? "1X" : "2X");
 	printl("Auto Self-Refresh?", ($bytes->[31] & 4) ? "Yes" : "No");
 	printl("On-Die Thermal Sensor readout?",
 		($bytes->[31] & 8) ? "Yes" : "No");

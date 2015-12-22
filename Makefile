@@ -24,8 +24,20 @@ INSTALL_PROGRAM	:= $(INSTALL) -m 755
 LN		:= ln -sf
 RM		:= rm -f
 
-CC	?= gcc
-AR	?= ar
+
+# CROSS_COMPILE specify the prefix used for all executables used
+# during compilation. Only gcc and related bin-utils executables
+# are prefixed with $(CROSS_COMPILE).
+# CROSS_COMPILE can be set on the command line
+# make CROSS_COMPILE=arm64-linux-
+# Alternatively CROSS_COMPILE can be set in the environment.
+CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
+
+# Make variables (CC, etc...)
+AS		?= $(CROSS_COMPILE)as
+LD		?= $(CROSS_COMPILE)ld
+CC		?= $(CROSS_COMPILE)gcc
+AR		?= $(CROSS_COMPILE)ar
 
 CFLAGS		?= -O2
 # When debugging, use the following instead
@@ -33,7 +45,11 @@ CFLAGS		?= -O2
 CFLAGS		+= -Wall
 SOCFLAGS	:= -fpic -D_REENTRANT $(CFLAGS)
 
+USE_STATIC_LIB ?= 0
 BUILD_STATIC_LIB ?= 1
+ifeq ($(USE_STATIC_LIB),1)
+BUILD_STATIC_LIB := 1
+endif
 
 KERNELVERSION	:= $(shell uname -r)
 
@@ -41,7 +57,7 @@ KERNELVERSION	:= $(shell uname -r)
 
 all:
 
-EXTRA	:=
-#EXTRA	+= py-smbus eepromer
+#EXTRA	:=
+EXTRA	+= eeprog py-smbus
 SRCDIRS	:= include lib eeprom stub tools $(EXTRA)
 include $(SRCDIRS:%=%/Module.mk)

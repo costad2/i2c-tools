@@ -4,6 +4,7 @@ i2c-tools CHANGES
 SVN HEAD
   tools: Fix build with recent compilers (gcc 4.6+)
   README: Clarify licenses
+          Mention the current maintainer
   decode-dimms: Decode module configuration type of DDR2 SDRAM
                 Decode bus width extension of DDR3 SDRAM
                 Don't choke when no EEPROM is found
@@ -36,13 +37,19 @@ SVN HEAD
                 Don't print raw SSTE32882 register values
                 Add support for Load Reduced DIMM (LRDIMM) DDR3 modules
                 Fully decode the DDR3 SDRAM Device Type field
+                Fix DDR3 extended temp range refresh rate decoding
                 Encode "degrees" to HTML degree symbol
                 Generate XHTML 1.1 compliant markup
                 Add a manual page
+                Correctly check for out-of-bounds vendor ID
+                Update manufacturer IDs (JEP106AQ)
   decode-vaio: Add a manual page
   eeprog: Add a manual page
+          Moved to a separate subdirectory
   eeprom: Add a manual page
+          Marked as deprecated
   eepromer: Add a manual page
+            Marked as deprecated
   i2cdetect: Do a best effort detection if functionality is missing
              Clarify the SMBus commands used for probing by default
   i2c-dev.h: Minimize differences with kernel flavor
@@ -53,6 +60,7 @@ SVN HEAD
            Use I2C_SMBUS_BLOCK_MAX instead of hard-coding 32
   lib/smbus.c: Add missing include which was causing a build error
   py-smbus: Fix module level docs
+            Add support for python 3
 
 3.1.0 (2011-12-04)
   decode-dimms: Decode module configuration type of DDR SDRAM
