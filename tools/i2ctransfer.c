@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 {
 	char filename[20];
 	char *end;
-	int i2cbus, address = -1, file, arg_idx = 1, nmsgs = 0, nmsgs_sent;
+	int i2cbus, address = -1, file, arg_idx = 1, nmsgs = 0, nmsgs_sent, i;
 	int force = 0, yes = 0, version = 0, verbose = 0;
 	unsigned buf_idx = 0;
 	unsigned long len, raw_data;
@@ -137,6 +137,9 @@ int main(int argc, char *argv[])
 	struct i2c_msg msgs[I2C_RDRW_IOCTL_MAX_MSGS];
 	struct i2c_rdwr_ioctl_data rdwr;
 	enum parse_state state = PARSE_GET_DESC;
+
+	for (i = 0; i < I2C_RDRW_IOCTL_MAX_MSGS; i++)
+		msgs[i].buf = NULL;
 
 	/* handle (optional) arg_idx first */
 	while (arg_idx < argc && argv[arg_idx][0] == '-') {
@@ -178,7 +181,7 @@ int main(int argc, char *argv[])
 		if (nmsgs > I2C_RDRW_IOCTL_MAX_MSGS) {
 			fprintf(stderr, "Error: Too many messages (max: %d)\n",
 				I2C_RDRW_IOCTL_MAX_MSGS);
-			exit(1);
+			goto err_out;
 		}
 
 		switch (state) {
@@ -190,20 +193,20 @@ int main(int argc, char *argv[])
 			case 'w': break;
 			default:
 				fprintf(stderr, "Error: Invalid direction\n");
-				goto err_out;
+				goto err_out_with_arg;
 			}
 
 			len = strtoul(arg_ptr, &end, 0);
 			if (len > 65535) {
 				fprintf(stderr, "Error: Length invalid\n");
-				goto err_out;
+				goto err_out_with_arg;
 			}
 
 			arg_ptr = end;
 			if (*arg_ptr) {
 				if (*arg_ptr++ != '@') {
 					fprintf(stderr, "Error: No '@' after length\n");
-					goto err_out;
+					goto err_out_with_arg;
 				}
 
 				/* We skip 10-bit support for now. If we want it, it
@@ -213,16 +216,16 @@ int main(int argc, char *argv[])
 
 				address = parse_i2c_address(arg_ptr);
 				if (address < 0)
-					goto err_out;
+					goto err_out_with_arg;
 
 				if (!force && set_slave_addr(file, address, 0))
-					goto err_out;
+					goto err_out_with_arg;
 
 			} else {
 				/* Reuse last address if possible */
 				if (address < 0) {
 					fprintf(stderr, "Error: No address given\n");
-					goto err_out;
+					goto err_out_with_arg;
 				}
 			}
 
@@ -234,7 +237,7 @@ int main(int argc, char *argv[])
 				buf = malloc(len);
 				if (!buf) {
 					fprintf(stderr, "Error: No memory for buffer\n");
-					goto err_out;
+					goto err_out_with_arg;
 				}
 				memset(buf, 0, len);
 				msgs[nmsgs].buf = buf;
@@ -253,7 +256,7 @@ int main(int argc, char *argv[])
 			raw_data = strtoul(arg_ptr, &end, 0);
 			if (raw_data > 255) {
 				fprintf(stderr, "Error: Data byte invalid\n");
-				goto err_out;
+				goto err_out_with_arg;
 			}
 			data = raw_data;
 			len = msgs[nmsgs].len;
@@ -270,7 +273,7 @@ int main(int argc, char *argv[])
 				case '=': break;
 				default:
 					fprintf(stderr, "Error: Invalid data byte suffix\n");
-					goto err_out;
+					goto err_out_with_arg;
 				}
 			}
 
@@ -283,7 +286,7 @@ int main(int argc, char *argv[])
 
 		default:
 			fprintf(stderr, "Error: Unnkown state in state machine!\n");
-			goto err_out;
+			goto err_out_with_arg;
 		}
 
 		arg_idx++;
@@ -291,18 +294,18 @@ int main(int argc, char *argv[])
 
 	if (state != PARSE_GET_DESC || nmsgs == 0) {
 		fprintf(stderr, "Error: Incomplete message\n");
-		exit(1);
+		goto err_out;
 	}
 
 	if (!yes && !confirm(filename, msgs, nmsgs))
-		exit(0);
+		goto out;
 
 	rdwr.msgs = msgs;
 	rdwr.nmsgs = nmsgs;
 	nmsgs_sent = ioctl(file, I2C_RDWR, &rdwr);
 	if (nmsgs_sent < 0) {
 		fprintf(stderr, "Error: Sending messages failed: %s\n", strerror(errno));
-		exit(errno);
+		goto err_out;
 	} else if (nmsgs_sent < nmsgs) {
 		fprintf(stderr, "Warning: only %d/%d messages were sent\n", nmsgs_sent, nmsgs);
 	}
@@ -311,10 +314,17 @@ int main(int argc, char *argv[])
 
 	print_msgs(msgs, nmsgs_sent, PRINT_READ_BUF | (verbose ? PRINT_HEADER | PRINT_WRITE_BUF : 0));
 
-	/* let Linux free malloced memory on termination */
+out:
+	for (i = 0; i <= nmsgs; i++)
+		free(msgs[i].buf);
+
 	exit(0);
 
-err_out:
+err_out_with_arg:
 	fprintf(stderr, "Error: faulty argument is '%s'\n", argv[arg_idx]);
+err_out:
+	for (i = 0; i <= nmsgs; i++)
+		free(msgs[i].buf);
+
 	exit(1);
 }
