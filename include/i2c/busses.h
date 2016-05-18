@@ -27,7 +27,7 @@
 #include <unistd.h>
 
 extern int i2c_open_i2c_dev(int i2cbus, char *filename, size_t size, int quiet);
-extern int i2c_get_functionality(int i2cbus, unsigned long *functionality);
+extern int i2c_get_functionality(int file, unsigned long *functionality);
 extern int i2c_set_slave_addr(int file, int address, int force);
 extern int i2c_set_adapter_timeout(int file, int timeout);
 extern int i2c_set_adapter_retries(int file, int retries);

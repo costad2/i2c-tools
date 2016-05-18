@@ -100,13 +100,6 @@ static int rtrim(char *s)
 	return i + 2;
 }
 
-#define MISSING_FUNC_FMT	"Error: Adapter does not have %s capability\n"
-
-/* We allocate space for the adapters in bunches. The last item is a
-   terminator, so here we start with room for 7 adapters, which should
-   be enough in most cases. If not, we allocate more later as needed. */
-#define BUNCH	8
-
 void free_adapters(struct i2c_adap *adapters)
 {
 	int i;

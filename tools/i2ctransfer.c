@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <linux/i2c.h>
 #include <linux/i2c-dev.h>
+#include "i2c/busses.h"
 #include "i2cbusses.h"
 #include "util.h"
 #include "../version.h"
@@ -67,12 +68,8 @@ static int check_funcs(int file)
 	unsigned long funcs;
 
 	/* check adapter functionality */
-	if (ioctl(file, I2C_FUNCS, &funcs) < 0) {
-		fprintf(stderr, "Error: Could not get the adapter "
-			"functionality matrix: %s\n", strerror(errno));
+	if (i2c_get_functionality(file, &funcs) < 0)
 		return -1;
-	}
-
 	if (!(funcs & I2C_FUNC_I2C)) {
 		fprintf(stderr, MISSING_FUNC_FMT, "I2C transfers");
 		return -1;
@@ -167,11 +164,11 @@ int main(int argc, char *argv[])
 		exit(0);
 	}
 
-	i2cbus = lookup_i2c_bus(argv[arg_idx++]);
+	i2cbus = i2c_lookup_i2c_bus(argv[arg_idx++]);
 	if (i2cbus < 0)
 		exit(1);
 
-	file = open_i2c_dev(i2cbus, filename, sizeof(filename), 0);
+	file = i2c_open_i2c_dev(i2cbus, filename, sizeof(filename), 0);
 	if (file < 0 || check_funcs(file))
 		exit(1);
 
@@ -214,11 +211,11 @@ int main(int argc, char *argv[])
 				 * here.
 				 */
 
-				address = parse_i2c_address(arg_ptr);
+				address = i2c_parse_i2c_address(arg_ptr);
 				if (address < 0)
 					goto err_out_with_arg;
 
-				if (!force && set_slave_addr(file, address, 0))
+				if (!force && i2c_set_slave_addr(file, address, 0))
 					goto err_out_with_arg;
 
 			} else {
@@ -243,13 +240,12 @@ int main(int argc, char *argv[])
 				msgs[nmsgs].buf = buf;
 			}
 
-			if (flags & I2C_M_RD || len == 0) {
+			if ((flags & I2C_M_RD) || len == 0) {
 				nmsgs++;
 			} else {
 				buf_idx = 0;
 				state = PARSE_GET_DATA;
 			}
-
 			break;
 
 		case PARSE_GET_DATA:

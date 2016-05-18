@@ -66,22 +66,13 @@ int i2c_open_i2c_dev(int i2cbus, char *filename, size_t size, int quiet) {
 	return (file);
 }
 
-int i2c_get_functionality(int i2cbus, unsigned long *functionality)
+int i2c_get_functionality(int file, unsigned long *functionality)
 {
-	int file;
-	char filename[20];
-	int ret = 0;
-
-	file = i2c_open_i2c_dev(i2cbus, filename, sizeof(filename), 1);
-	if (file < 0)
-		return -ENODEV;
-
-	if (ioctl(file, I2C_FUNCS, functionality) < 0)
-		ret = -ENODEV;
-
-	close(file);
-
-	return ret;
+	if (ioctl(file, I2C_FUNCS, functionality) < 0) {
+		fprintf(stderr,"Error: Could not get adapter functionality: %s\n", strerror(errno));
+		return -errno;
+	}
+	return 0;
 }
 
 int i2c_set_slave_addr(int file, int address, int force)

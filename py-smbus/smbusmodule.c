@@ -5,19 +5,18 @@
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; version 2 of the License.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
 #include <Python.h>
-#include "structmember.h"
 #include <sys/ioctl.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -626,7 +625,7 @@ SMBus_set_pec(SMBus *self, PyObject *val, void *closure)
 		return -1;
 	}
 	else if (pec == -1) {
-		PyErr_SetString(PyExc_TypeError, 
+		PyErr_SetString(PyExc_TypeError,
 			"The pec attribute must be a boolean.");
 		return -1;
 	}
