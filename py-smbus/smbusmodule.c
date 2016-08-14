@@ -49,7 +49,7 @@ typedef struct {
 	PyObject_HEAD
 
 	int fd;		/* open file descriptor: /dev/i2c-?, or -1 */
-	int addr;	/* current client SMBus address */
+	int addr;	/* current client SMBus address */
 	int pec;	/* !0 => Packet Error Codes enabled */
 	int force;      /* force loading the module depsite device busy */
 } SMBus;
