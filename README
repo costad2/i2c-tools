@@ -1,7 +1,8 @@
 ## Changed Content from original sources
  * By default i2-tools/py-smbus module does not provide an option to forcefully open a i2c-device-address( for safe reasons). But i2get command gives option '-y' to read/write.
  * So i forked i2c-tools/py-smbus in github to allow python code also to have similar option. 
-  * I have changed 3 lines in python module code.
+ * I have changed 3 lines in python module code.
+ * Warning : Reading/Writing forcefully a i2c device can have dangerous consequences. So use this carefully.
  
 
 I2C TOOLS FOR LINUX
