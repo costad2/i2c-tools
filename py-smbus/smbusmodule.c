@@ -511,6 +511,57 @@ SMBus_block_process_call(SMBus *self, PyObject *args)
 	return SMBus_buf_to_list(&data.block[1], data.block[0]);
 }
 
+PyDoc_STRVAR(SMBus_read_i2c_block_doc,
+    "read_i2c_block(addr, len=32) -> results\n\n"
+    "Perform Simple receive transaction.\n");
+
+static PyObject *
+SMBus_read_i2c_block(SMBus *self, PyObject *args)
+{
+    int addr, len=32;
+    union i2c_smbus_data data;
+
+    if (!PyArg_ParseTuple(args, "ii|i:read_i2c_block", &addr, &len))
+        return NULL;
+
+    SMBus_SET_ADDR(self, addr);
+
+    /* save a bit of code by calling the i2c_master_recv function directly */
+    if (i2c_master_recv(self->fd, &data, len)) {
+        PyErr_SetFromErrno(PyExc_IOError);
+        return NULL;
+    }
+
+    /* first byte of the block contains (remaining) data length */
+    return SMBus_buf_to_list(&data.block[1], len);
+}
+
+PyDoc_STRVAR(SMBus_write_i2c_block_doc,
+    "write_i2c_block(addr, [vals])\n\n"
+    "Perform Simple send transaction.\n");
+
+static PyObject *
+SMBus_write_i2c_block(SMBus *self, PyObject *args)
+{
+    int addr;
+    union i2c_smbus_data data;
+
+    if (!PyArg_ParseTuple(args, "iiO&:write_i2c_block", &addr,
+            SMBus_list_to_data, &data))
+        return NULL;
+
+    SMBus_SET_ADDR(self, addr);
+
+    /* save a bit of code by calling the access function directly */
+    if (i2c_master_send(self->fd, &data)) {
+        PyErr_SetFromErrno(PyExc_IOError);
+        return NULL;
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 PyDoc_STRVAR(SMBus_read_i2c_block_data_doc,
 	"read_i2c_block_data(addr, cmd, len=32) -> results\n\n"
 	"Perform I2C Block Read transaction.\n");
@@ -599,7 +650,11 @@ static PyMethodDef SMBus_methods[] = {
 		SMBus_write_block_data_doc},
 	{"block_process_call", (PyCFunction)SMBus_block_process_call,
 		METH_VARARGS, SMBus_block_process_call_doc},
-	{"read_i2c_block_data", (PyCFunction)SMBus_read_i2c_block_data,
+    {"read_i2c_block", (PyCFunction)SMBus_read_i2c_block,
+        METH_VARARGS, SMBus_read_i2c_block_doc},
+    {"write_i2c_block", (PyCFunction)SMBus_write_i2c_block,
+        METH_VARARGS, SMBus_write_i2c_block_doc},
+    {"read_i2c_block_data", (PyCFunction)SMBus_read_i2c_block_data,
 		METH_VARARGS, SMBus_read_i2c_block_data_doc},
 	{"write_i2c_block_data", (PyCFunction)SMBus_write_i2c_block_data,
 		METH_VARARGS, SMBus_write_i2c_block_data_doc},
