@@ -50,6 +50,7 @@ typedef struct {
 	int fd;		/* open file descriptor: /dev/i2c-?, or -1 */
 	int addr;	/* current client SMBus address */
 	int pec;	/* !0 => Packet Error Codes enabled */
+	int force;      /* force loading the module depsite device busy */
 } SMBus;
 
 static PyObject *
@@ -63,7 +64,8 @@ SMBus_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	self->fd = -1;
 	self->addr = -1;
 	self->pec = 0;
-
+        self->force =  getenv("PY_SMBUS") != NULL ;
+        
 	return (PyObject *)self;
 }
 
@@ -161,7 +163,7 @@ SMBus_set_addr(SMBus *self, int addr)
 	int ret = 0;
 
 	if (self->addr != addr) {
-		ret = ioctl(self->fd, I2C_SLAVE, addr);
+		ret = ioctl(self->fd, (self->force ? I2C_SLAVE_FORCE : I2C_SLAVE), addr);
 		self->addr = addr;
 	}
 
