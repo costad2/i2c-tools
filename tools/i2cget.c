@@ -143,7 +143,7 @@ static int confirm(const char *filename, int address, int size, int daddress,
 	else
 		fprintf(stderr, "data address\n0x%02x", daddress);
         if (size == I2C_SMBUS_I2C_BLOCK_DATA)
-            fprintf(stderr, ", %d bytes using read I2C block data.\n", bytes);
+            fprintf(stderr, ", %d bytes using read I2C block data.\n", length);
         else
             fprintf(stderr, ", using %s.\n",
                     size == I2C_SMBUS_BYTE ? (daddress < 0 ?
@@ -198,11 +198,11 @@ int main(int argc, char *argv[])
 	if (argc < flags + 3)
 		help();
 
-	i2cbus = lookup_i2c_bus(argv[flags+1]);
+	i2cbus = i2c_lookup_i2c_bus(argv[flags+1]);
 	if (i2cbus < 0)
 		help();
 
-	address = parse_i2c_address(argv[flags+2]);
+	address = i2c_parse_i2c_address(argv[flags+2]);
 	if (address < 0)
 		help();
 
@@ -245,10 +245,10 @@ int main(int argc, char *argv[])
 		length = I2C_SMBUS_BLOCK_MAX;
 	}
 
-	file = open_i2c_dev(i2cbus, filename, sizeof(filename), 0);
+	file = i2c_open_i2c_dev(i2cbus, filename, sizeof(filename), 0);
 	if (file < 0
 	 || check_funcs(file, size, daddress, pec)
-	 || set_slave_addr(file, address, force))
+	 || i2c_set_slave_addr(file, address, force))
 		exit(1);
 
 	if (!yes && !confirm(filename, address, size, daddress, length, pec))
