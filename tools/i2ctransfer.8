@@ -1,0 +1,51 @@
+.TH i2ctransfer 8 "November 2016"
+.SH "NAME"
+i2ctransfer \- read from I2C/SMBus chip registers
+
+.SH SYNOPSIS
+.B i2ctransfer
+.RB [ -f ]
+.RB [ -y ]
+.I i2ctransfer
+.I chip-address
+.RI [ "data-address " [ mode ]]
+.br
+.B i2ctransfer
+.B -V
+
+.SH DESCRIPTION
+i2ctransfer is a small helper program to read registers visible through the I2C
+bus (or SMBus).
+
+.SH OPTIONS
+.TP
+.B -V
+Display the version and exit.
+.TP
+.B -f
+Force access to the device even if it is already busy. By default, i2ctransfer
+will refuse to access a device which is already under the control of a
+kernel driver. Using this flag is dangerous, it can seriously confuse the
+kernel driver in question. It can also cause i2cget to return an invalid
+value. So use at your own risk and only if you know what you're doing.
+.TP
+.B -y
+Disable interactive mode. By default, i2ctransfer will wait for a confirmation
+from the user before messing with the I2C bus. When this flag is used, it
+will perform the operation directly. This is mainly meant to be used in
+scripts. Use with caution.
+
+.SH WARNING
+i2ctransfer can be extremely dangerous if used improperly. I2C and SMBus are designed
+in such a way that an SMBus read transaction can be seen as a write transaction by
+certain chips. This is particularly true if setting \fImode\fR to \fBcp\fP (write byte/read
+byte with PEC). Be extremely careful using this program.
+
+.SH SEE ALSO
+i2cdump(8), i2cset(8)
+
+.SH AUTHOR
+Jean Delvare
+
+This manual page was strongly inspired from those written by David Z Maze
+for i2cset.

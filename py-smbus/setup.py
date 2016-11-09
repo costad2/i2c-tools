@@ -3,7 +3,7 @@
 from distutils.core import setup, Extension
 
 setup(	name="smbus",
-	version="1.1",
+	version="1.2",
 	description="Python bindings for Linux SMBus access through i2c-dev",
 	author="Mark M. Hoffman",
 	author_email="mhoffman@lightlink.com",
