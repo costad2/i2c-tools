@@ -1,14 +1,13 @@
 # I2C tools for Linux
 #
 # Copyright (C) 2007-2012  Jean Delvare <jdelvare@suse.de>
-# Copyright (C) 2014 Danielle Costantino <danielle.costantino@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 
-DESTDIR	=
+DESTDIR	?=
 prefix	= /usr/local
 bindir	= $(prefix)/bin
 sbindir	= $(prefix)/sbin
@@ -38,6 +37,7 @@ AS		?= $(CROSS_COMPILE)as
 LD		?= $(CROSS_COMPILE)ld
 CC		?= $(CROSS_COMPILE)gcc
 AR		?= $(CROSS_COMPILE)ar
+STRIP		?= $(CROSS_COMPILE)strip
 
 CFLAGS		?= -O2
 # When debugging, use the following instead
@@ -57,7 +57,7 @@ KERNELVERSION	:= $(shell uname -r)
 
 all:
 
-#EXTRA	:=
-EXTRA	+= eeprog py-smbus
+EXTRA	:=
+#EXTRA	+= eeprog py-smbus
 SRCDIRS	:= include lib eeprom stub tools $(EXTRA)
 include $(SRCDIRS:%=%/Module.mk)
