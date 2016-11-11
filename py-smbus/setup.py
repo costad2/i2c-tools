@@ -12,13 +12,13 @@ setup(	name="smbus",
 	license="GPLv2",
 	url="http://lm-sensors.org/",
 	ext_modules=[
-                    Extension(
-		            name="smbus",
-		            sources=["smbusmodule.c"],
+	                Extension(
+	                name="smbus",
+	                sources=["smbusmodule.c"],
 	                library_dirs=["../lib"],
 	                libraries=["i2c"],
 		            extra_compile_args=['-I../include'],
 		            extra_link_args=['-L../lib', '-li2c']
-                	)
-                ]
-)
+	                )
+	            ]
+    )
