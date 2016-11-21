@@ -532,8 +532,7 @@ SMBus_read_i2c_block(SMBus *self, PyObject *args)
 
     SMBus_SET_ADDR(self, addr);
 
-    /* save a bit of code by calling the i2c_master_recv function directly */
-    if (i2c_master_recv(self->fd, &data, len)) {
+    if (read(self->fd, &data, len) != len) {
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
@@ -549,17 +548,16 @@ PyDoc_STRVAR(SMBus_write_i2c_block_doc,
 static PyObject *
 SMBus_write_i2c_block(SMBus *self, PyObject *args)
 {
-    int addr;
+    int addr, len =32;
     union i2c_smbus_data data;
 
-    if (!PyArg_ParseTuple(args, "iiO&:write_i2c_block", &addr,
+    if (!PyArg_ParseTuple(args, "iiO&:write_i2c_block", &addr, &len, 
             SMBus_list_to_data, &data))
         return NULL;
 
     SMBus_SET_ADDR(self, addr);
 
-    /* save a bit of code by calling the access function directly */
-    if (i2c_master_send(self->fd, &data)) {
+    if (write(self->fd, &data, len) != len) {
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
