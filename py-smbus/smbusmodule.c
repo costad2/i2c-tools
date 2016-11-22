@@ -464,7 +464,7 @@ SMBus_list_to_data(PyObject *list, union i2c_smbus_data *data)
 }
 
 static int
-SMBus_list_to_array(PyObject *list, char *data, int *len)
+SMBus_list_to_array(PyObject *list, char* data, int* len)
 {
     static char *msg = "Second argument must be a list of at least one, "
                 "but not more than 32 integers";
@@ -479,8 +479,10 @@ SMBus_list_to_array(PyObject *list, char *data, int *len)
         PyErr_SetString(PyExc_OverflowError, msg);
         return 0; /* fail */
     }
+    
+    printf("\r\n\r\n converting list size of %d and to array \r\n\r\n", lenght);
 
-    len = &lenght;
+    //*len = lenght;
 
     for (ii = 0; ii < lenght; ii++) {
         PyObject *val = PyList_GET_ITEM(list, ii);
@@ -571,8 +573,12 @@ SMBus_read_i2c_block(SMBus *self, PyObject *args)
         return NULL;
 
     SMBus_SET_ADDR(self, addr);
+    printf("\r\n\r\n reading i2c block from address %x and lenght %d \r\n\r\n", addr, len);
+
 
     if (read(self->fd, data, len) != len) {
+        printf("\r\n\r\n ERROR OCCURED! errno value: %d. \r\n\r\n", errno); \
+
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
@@ -587,13 +593,24 @@ PyDoc_STRVAR(SMBus_write_i2c_block_doc,
 static PyObject *
 SMBus_write_i2c_block(SMBus *self, PyObject *args)
 {
-    int addr, len =32;
-    unsigned char data[len];
+    int addr, len=32;
+    char data[len];
+    PyObject *listObj;  /* the list of tranmit data */
 
-    if (!PyArg_ParseTuple(args, "iO&:write_i2c_block", &addr, SMBus_list_to_array, &data, &len))
+    /*if (!PyArg_ParseTuple(args, "iO!:write_i2c_block", &addr, &PyList_Type, &listObj))
         return NULL;
 
+    printf("\r\n\r\n Converting python list \r\n\r\n");
+
+    SMBus_list_to_array(listObj, data, &len);*/
+
+    printf("\r\n\r\n Converting python list \r\n\r\n");
+    if (!PyArg_ParseTuple(args, "iO&:write_i2c_block", &addr, SMBus_list_to_array, &data, &len))
+        return NULL;
+    len = 3;
+
     SMBus_SET_ADDR(self, addr);
+    printf("\r\n\r\n writing i2c block to address %x and lenght %d %x \r\n\r\n", addr, len, data[1]);
 
     if (write(self->fd, data, len) != len) {
         PyErr_SetFromErrno(PyExc_IOError);

@@ -84,6 +84,8 @@ do:
   $ make EXTRA="py-smbus"
 
 
+Do not forget to run "sudo ldconfig" after "make install" and "sudo python setup.py install"
+
 DOCUMENTATION
 -------------
 
