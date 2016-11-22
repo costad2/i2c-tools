@@ -589,28 +589,16 @@ SMBus_write_i2c_block(SMBus *self, PyObject *args)
 {
     int addr, len =32;
     unsigned char data[len];
-    char buf[10];
-
 
     if (!PyArg_ParseTuple(args, "iO&:write_i2c_block", &addr, SMBus_list_to_array, &data, &len))
         return NULL;
 
     SMBus_SET_ADDR(self, addr);
 
-    /*if (write(self->fd, 13, len) != len) {
+    if (write(self->fd, data, len) != len) {
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
-    }*/
-
-    buf[0] = 0x25;
-    buf[1] = 0x43;
-    buf[2] = 0x65;
-
-    /*if (write(self->fd, buf, 3) != 3) {
-        PyErr_SetFromErrno(PyExc_IOError);
-        return NULL;
-    }*/
-
+    }
 
     Py_INCREF(Py_None);
     return Py_None;
