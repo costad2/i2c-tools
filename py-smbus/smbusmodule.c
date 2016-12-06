@@ -810,12 +810,13 @@ static struct PyModuleDef SMBusModule = {
 #define INIT_RETURN(m)	return m
 #define INIT_FNAME	PyInit_smbus
 #else
-static PyMethodDef SMBus_module_methods[] = {
-	{NULL}
-};
 #define INIT_RETURN(m)	return
 #define INIT_FNAME	initsmbus
 #endif
+
+static PyMethodDef SMBus_module_methods[] = {
+    {NULL}
+};
 
 #if PY_MAJOR_VERSION >= 3
   #define MOD_ERROR_VAL NULL
