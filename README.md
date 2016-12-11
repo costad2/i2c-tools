@@ -1,10 +1,4 @@
-## Changed Content from original sources
- * By default i2-tools/py-smbus module does not provide an option to forcefully open a i2c-device-address( for safe reasons). But i2get command gives option '-y' to read/write.
- * So i forked i2c-tools/py-smbus in github to allow python code also to have similar option. 
- * I have changed 3 lines in python module code.
- * Usage of this changed module at: https://github.com/GssMahadevan/chip_axp209_tool
- * Warning : Reading/Writing forcefully a i2c device can have dangerous consequences. So use this carefully.
- 
+[![Build Status](https://travis-ci.org/MLAB-project/i2c-tools.svg?branch=master)](https://travis-ci.org/MLAB-project/i2c-tools)
 
 I2C TOOLS FOR LINUX
 ===================
@@ -18,6 +12,14 @@ GNU/Linux.
 
 The latest version of the code can be downloaded from:
   http://www.lm-sensors.org/wiki/I2CTools
+
+
+## Changed from original sources
+ * By default i2-tools/py-smbus module does not provide an option to forcefully open a i2c-device-address( for safe reasons). But i2get command gives option '-y' to read/write.
+ * So i forked i2c-tools/py-smbus in github to allow python code also to have similar option. 
+ * I have changed 3 lines in python module code.
+ * Usage of this changed module at: https://github.com/GssMahadevan/chip_axp209_tool
+
 
 
 CONTENTS
