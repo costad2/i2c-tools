@@ -1,0 +1,7 @@
+language: c
+compiler:
+- gcc
+
+script: make EXTRA="py-smbus" && make install 
+
+
