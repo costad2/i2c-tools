@@ -2,6 +2,7 @@ language: c
 compiler:
 - gcc
 
-script: make EXTRA="py-smbus" && make install 
+script: make EXTRA="py-smbus" && sudo make install && cd py-smbus && sudo python setup.py install
 
+sudo: required
 
