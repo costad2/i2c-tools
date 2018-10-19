@@ -8,17 +8,11 @@ as well as an I2C library. The tools were originally part of the lm-sensors
 project but were finally split into their own package for convenience. The
 library is used by some of the tools, but can also be used by third-party
 applications. The tools and library compile, run and have been tested on
-GNU/Linux.
-
-The latest version of the code can be downloaded from:
-  http://www.lm-sensors.org/wiki/I2CTools
-
+GNU/Linux on ODROID, Raspberry Pi and Beaglebone boards.
 
 ## Changed from original sources
- * By default i2-tools/py-smbus module does not provide an option to forcefully open a i2c-device-address( for safe reasons). But i2get command gives option '-y' to read/write.
- * So i forked i2c-tools/py-smbus in github to allow python code also to have similar option. 
- * I have changed 3 lines in python module code.
- * Usage of this changed module at: https://github.com/GssMahadevan/chip_axp209_tool
+ * By default i2-tools/py-smbus module does not provide an option to forcefully open a i2c-device-address (for safe reasons). But i2get command gives option '-y' to read/write.
+ * Added the write_i2c_block and read_i2c_block methods
 
 
 
@@ -104,6 +98,6 @@ QUESTIONS AND BUG REPORTS
 Please post your questions and bug reports to the linux-i2c mailing list:
   linux-i2c@vger.kernel.org
 with Cc to the current maintainer:
-  Jean Delvare <jdelvare@suse.de>
+  Jakub Kakona <kaklik@mlab.cz>
 For additional information about this list, see:
   http://vger.kernel.org/vger-lists.html#linux-i2c
