@@ -22,7 +22,7 @@ clean-python:
 	rm -rf py-smbus/build
 
 install-python:
-	$(DISTUTILS) install
+	$(DISTUTILS) install --root=$(DESTDIR) --prefix=$(prefix)
 
 all: all-python
 

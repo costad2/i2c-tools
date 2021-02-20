@@ -5,18 +5,19 @@
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; version 2 of the License.
- *
+ * 
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
 #include <Python.h>
+#include "structmember.h"
 #include <sys/ioctl.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -24,6 +25,11 @@
 #include <linux/i2c.h>
 #include <linux/i2c-dev.h>
 #include <i2c/smbus.h>
+
+#if PY_MAJOR_VERSION >= 3
+#define PyInt_Check(value) PyLong_Check(value)
+#define PyInt_AS_LONG(value) PyLong_AS_LONG(value)
+#endif
 
 /*
 ** These are required to build this module against Linux older than 2.6.23.
@@ -50,6 +56,7 @@ typedef struct {
 	int fd;		/* open file descriptor: /dev/i2c-?, or -1 */
 	int addr;	/* current client SMBus address */
 	int pec;	/* !0 => Packet Error Codes enabled */
+	int force;      /* force loading the module depsite device busy */
 } SMBus;
 
 static PyObject *
@@ -63,7 +70,8 @@ SMBus_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	self->fd = -1;
 	self->addr = -1;
 	self->pec = 0;
-
+        self->force =  getenv("PY_SMBUS") != NULL ;
+        
 	return (PyObject *)self;
 }
 
@@ -161,7 +169,7 @@ SMBus_set_addr(SMBus *self, int addr)
 	int ret = 0;
 
 	if (self->addr != addr) {
-		ret = ioctl(self->fd, I2C_SLAVE, addr);
+		ret = ioctl(self->fd, (self->force ? I2C_SLAVE_FORCE : I2C_SLAVE), addr);
 		self->addr = addr;
 	}
 
@@ -455,6 +463,46 @@ SMBus_list_to_data(PyObject *list, union i2c_smbus_data *data)
 	return 1; /* success */
 }
 
+static int
+SMBus_list_to_array(PyObject *list, char* data, int* len)
+{
+    static char *msg = "Second argument must be a list of at least one, "
+                "but not more than 32 integers";
+    int ii, lenght;
+
+    if (!PyList_Check(list)) {
+        PyErr_SetString(PyExc_TypeError, msg);
+        return 0; /* fail */
+    }
+
+    if ((lenght = PyList_GET_SIZE(list)) > 32) {
+        PyErr_SetString(PyExc_OverflowError, msg);
+        return 0; /* fail */
+    }
+
+    *len = lenght;
+
+    for (ii = 0; ii < lenght; ii++) {
+        PyObject *val = PyList_GET_ITEM(list, ii);
+#if PY_MAJOR_VERSION >= 3
+        if (!PyLong_Check(val)) {
+            PyErr_SetString(PyExc_TypeError, msg);
+            return 0; /* fail */
+        }
+        data[ii] = (__u8)PyLong_AS_LONG(val);
+#else
+        if (!PyInt_Check(val)) {
+            PyErr_SetString(PyExc_TypeError, msg);
+            return 0; /* fail */
+        }
+        data[ii] = (__u8)PyInt_AS_LONG(val);
+#endif
+    }
+
+    return 1; /* success */
+}
+
+
 PyDoc_STRVAR(SMBus_write_block_data_doc,
 	"write_block_data(addr, cmd, [vals])\n\n"
 	"Perform SMBus Write Block Data transaction.\n");
@@ -507,6 +555,55 @@ SMBus_block_process_call(SMBus *self, PyObject *args)
 
 	/* first byte of the block contains (remaining) data length */
 	return SMBus_buf_to_list(&data.block[1], data.block[0]);
+}
+
+PyDoc_STRVAR(SMBus_read_i2c_block_doc,
+    "read_i2c_block(addr, len=32) -> results\n\n"
+    "Perform Simple receive transaction.\n");
+
+static PyObject *
+SMBus_read_i2c_block(SMBus *self, PyObject *args)
+{
+    int addr, len=32;
+    unsigned char data[len];
+
+    if (!PyArg_ParseTuple(args, "i|i:read_i2c_block", &addr, &len))
+        return NULL;
+
+    SMBus_SET_ADDR(self, addr);
+
+    if (read(self->fd, data, len) != len) {
+        PyErr_SetFromErrno(PyExc_IOError);
+        return NULL;
+    }
+
+    return SMBus_buf_to_list(data, len);
+}
+
+PyDoc_STRVAR(SMBus_write_i2c_block_doc,
+    "write_i2c_block(addr, [vals])\n\n"
+    "Perform Simple send transaction.\n");
+
+static PyObject *
+SMBus_write_i2c_block(SMBus *self, PyObject *args)
+{
+    int addr, len=32;
+    char data[len];
+    PyObject *datalist;  /* the list of data to write */
+
+    if (!PyArg_ParseTuple(args, "iO!:write_i2c_block", &addr, &PyList_Type, &datalist))
+        return NULL;
+
+    SMBus_list_to_array(datalist, data, &len);
+    SMBus_SET_ADDR(self, addr);
+
+    if (write(self->fd, data, len) != len) {
+        PyErr_SetFromErrno(PyExc_IOError);
+        return NULL;
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 PyDoc_STRVAR(SMBus_read_i2c_block_data_doc,
@@ -597,7 +694,11 @@ static PyMethodDef SMBus_methods[] = {
 		SMBus_write_block_data_doc},
 	{"block_process_call", (PyCFunction)SMBus_block_process_call,
 		METH_VARARGS, SMBus_block_process_call_doc},
-	{"read_i2c_block_data", (PyCFunction)SMBus_read_i2c_block_data,
+    {"read_i2c_block", (PyCFunction)SMBus_read_i2c_block,
+        METH_VARARGS, SMBus_read_i2c_block_doc},
+    {"write_i2c_block", (PyCFunction)SMBus_write_i2c_block,
+        METH_VARARGS, SMBus_write_i2c_block_doc},
+    {"read_i2c_block_data", (PyCFunction)SMBus_read_i2c_block_data,
 		METH_VARARGS, SMBus_read_i2c_block_data_doc},
 	{"write_i2c_block_data", (PyCFunction)SMBus_write_i2c_block_data,
 		METH_VARARGS, SMBus_write_i2c_block_data_doc},
@@ -625,7 +726,7 @@ SMBus_set_pec(SMBus *self, PyObject *val, void *closure)
 		return -1;
 	}
 	else if (pec == -1) {
-		PyErr_SetString(PyExc_TypeError,
+		PyErr_SetString(PyExc_TypeError, 
 			"The pec attribute must be a boolean.");
 		return -1;
 	}
@@ -709,23 +810,36 @@ static struct PyModuleDef SMBusModule = {
 #define INIT_RETURN(m)	return m
 #define INIT_FNAME	PyInit_smbus
 #else
-static PyMethodDef SMBus_module_methods[] = {
-	{NULL}
-};
 #define INIT_RETURN(m)	return
 #define INIT_FNAME	initsmbus
 #endif
 
-#ifndef PyMODINIT_FUNC	/* declarations for DLL import/export */
-#define PyMODINIT_FUNC void
-#endif
-PyMODINIT_FUNC
-INIT_FNAME(void)
-{
-	PyObject* m;
+static PyMethodDef SMBus_module_methods[] = {
+    {NULL}
+};
 
-	if (PyType_Ready(&SMBus_type) < 0)
-		INIT_RETURN(NULL);
+#if PY_MAJOR_VERSION >= 3
+  #define MOD_ERROR_VAL NULL
+  #define MOD_SUCCESS_VAL(val) val
+  #define MOD_INIT(name) PyMODINIT_FUNC PyInit_##name(void)
+  #define MOD_DEF(ob, name, doc, methods) \
+          static struct PyModuleDef moduledef = { \
+            PyModuleDef_HEAD_INIT, name, doc, -1, methods, }; \
+          ob = PyModule_Create(&moduledef);
+#else
+  #define MOD_ERROR_VAL
+  #define MOD_SUCCESS_VAL(val)
+  #define MOD_INIT(name) void init##name(void)
+  #define MOD_DEF(ob, name, doc, methods) \
+          ob = Py_InitModule3(name, methods, doc);
+#endif
+
+MOD_INIT(smbus)
+{
+    PyObject *m;
+
+    MOD_DEF(m, "smbus", SMBus_module_doc,
+            SMBus_module_methods)
 
 #if PY_MAJOR_VERSION >= 3
 	m = PyModule_Create(&SMBusModule);
@@ -735,9 +849,12 @@ INIT_FNAME(void)
 	if (m == NULL)
 		INIT_RETURN(NULL);
 
-	Py_INCREF(&SMBus_type);
-	PyModule_AddObject(m, "SMBus", (PyObject *)&SMBus_type);
+    if (PyType_Ready(&SMBus_type) < 0)
+        return MOD_ERROR_VAL;
 
-	INIT_RETURN(m);
+    Py_INCREF(&SMBus_type);
+    PyModule_AddObject(m, "SMBus", (PyObject *)&SMBus_type);
+
+    return MOD_SUCCESS_VAL(m);
 }
 
